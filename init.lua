@@ -7,7 +7,7 @@ local fuel_max_charge = 650000 * 25 -- Max value for one uranium rod
 
 local ocs = core.colorize('#eeee00', " >>> ")
 local ccs = core.colorize('#eeee00', " <<< ")
-local nukestring = ocs.."OK, place charged items on empty slot only"..ccs
+local nukestring = ocs.."OK"..ccs
 
 minetest.register_tool("pocketnuke:uranium_fuel", {   -- This is a trick to be able to show a wearout bar 
     description = "PocketNuke Uranium Fuel",
@@ -104,13 +104,16 @@ minetest.register_on_joinplayer(function(player)
 			if chat then minetest.chat_send_player(name, ocs.."Do not touch it, its radioactive"..ccs) end
 
 			return 0
+		
+
 		end
 
 
-		
+	return stack:get_count()
 
-	return 1
 	end,
+
+
 	
 	
 	-- Moving across pocketnuclear is not allowed
@@ -174,13 +177,12 @@ minetest.register_on_joinplayer(function(player)
 			
 			player_inv:set_stack("fuel", 1, fuelstack)
 			inv:set_stack("fuel", 1, fuelstack)
-
+		
+			
 		end
 
 		player_inv:set_stack(listname, index, stack)
 		inv:set_stack(listname, index, stack)
-
-		
 			
 	end,
 
@@ -192,9 +194,11 @@ minetest.register_on_joinplayer(function(player)
 
 		if listname == "machine" then
 
-			stack:take_item(stack:get_count())
-			player:get_inventory():set_stack(listname, index, stack)
-			inv:set_stack(listname, index, stack)
+			return stack:get_count()
+	
+		else
+
+			return 0
 		end
 
 	end,
