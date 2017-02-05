@@ -107,7 +107,8 @@ minetest.register_on_joinplayer(function(player)
 		
 
 		end
-
+			
+			
 
 	return stack:get_count()
 
@@ -194,6 +195,9 @@ minetest.register_on_joinplayer(function(player)
 
 		if listname == "machine" then
 
+			
+			stack:take_item(stack:get_count())
+			player_inv:set_stack(listname,index,stack)
 			return stack:get_count()
 	
 		else
