@@ -11,7 +11,7 @@ As fuel works the technic:uranium_fuel
 
 Known issues:
 
-After charging the device do NOT place on occupied slot in your inventory.
+-After charging the device do NOT place on occupied slot in your inventory.- fixed
 
 formspec status messages not working yet
 
