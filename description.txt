@@ -1,0 +1,1 @@
+Adds a button to your inventory where you can charge your technic tools instantly.
