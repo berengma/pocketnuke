@@ -35,6 +35,59 @@ unified_inventory.register_button("nuke", {
 		end
 	})
 
+local pocket_charge_tool
+if technic.plus then
+	function pocket_charge_tool(inv, stack, stackname, player_inv)
+		local fuelstack = player_inv:get_stack("fuel", 1)
+		local fuelmeta = minetest.deserialize(fuelstack:get_metadata()) or {}
+		local max_charge = stack:get_definition().technic_max_charge or 0
+		local charge = technic.get_RE_charge(stack)
+		-- debug minetest.chat_send_all(" >>> tool charge = "..meta.charge)
+		-- debug minetest.chat_send_all(" >>> max_tool charge = "..max_charge)
+		local need = max_charge - charge
+		charge = charge + (need >= fuelmeta.fuel and fuelmeta.fuel or need)
+		fuelmeta.fuel = fuelmeta.fuel - need
+		-- debug minetest.chat_send_all(" >>> Stock = "..fuelmeta.fuel)
+		fuelstack:set_wear(65535-(fuelmeta.fuel/fuel_max_charge*65535))  -- update fuel wearout
+		technic.set_RE_charge(stack, charge)
+		fuelstack:set_metadata(minetest.serialize(fuelmeta))
+		if fuelmeta.fuel <= 0 then
+			fuelstack = {}
+		end
+		player_inv:set_stack("fuel", 1, fuelstack)
+		inv:set_stack("fuel", 1, fuelstack)
+	end
+else
+	function pocket_charge_tool(inv, stack, stackname, player_inv)
+		local fuelstack = player_inv:get_stack("fuel", 1)
+		local fuelmeta = minetest.deserialize(fuelstack:get_metadata()) or {}
+		local meta = minetest.deserialize(stack:get_metadata()) or {}
+		local max_charge = technic.power_tools[stackname] or 0
+		if not meta or not meta.charge then
+			meta.charge = 0
+		end
+		-- debug minetest.chat_send_all(" >>> tool charge = "..meta.charge)
+		-- debug minetest.chat_send_all(" >>> max_tool charge = "..max_charge)
+		local need = max_charge	- meta.charge
+		if need >= fuelmeta.fuel then
+			meta.charge = meta.charge + fuelmeta.fuel
+			fuelmeta.fuel = fuelmeta.fuel - need
+		else
+			meta.charge = meta.charge + need
+			fuelmeta.fuel = fuelmeta.fuel - need
+		end
+		-- debug minetest.chat_send_all(" >>> Stock = "..fuelmeta.fuel)
+		fuelstack:set_wear(65535-(fuelmeta.fuel/fuel_max_charge*65535))  -- update fuel wearout
+		technic.set_RE_wear(stack, meta.charge, max_charge)              -- update tool charge
+		stack:set_metadata(minetest.serialize(meta))
+		fuelstack:set_metadata(minetest.serialize(fuelmeta))
+		if fuelmeta.fuel <= 0 then
+			fuelstack = {}
+		end
+		player_inv:set_stack("fuel", 1, fuelstack)
+		inv:set_stack("fuel", 1, fuelstack)
+	end
+end
 
 minetest.register_on_joinplayer(function(player)
 	local player_inv = player:get_inventory()
@@ -57,7 +110,6 @@ minetest.register_on_joinplayer(function(player)
 			end
 		end
 		if listname == "machine" then
-			local meta = minetest.deserialize(stack:get_metadata())
 			if not technic.power_tools[stackname] then
 			  if chat then 
 			      --minetest.chat_send_player(name, ocs.."This is not rechargeable"..ccs) 
@@ -108,29 +160,7 @@ minetest.register_on_joinplayer(function(player)
 			stack:set_metadata(minetest.serialize(meta))            -- initialize waerout 
 		end	
 		if listname == "machine" then
-			local fuelstack = player_inv:get_stack("fuel", 1)
-			local fuelmeta = minetest.deserialize(fuelstack:get_metadata()) or {}
-			local meta = minetest.deserialize(stack:get_metadata()) or {}
-			local max_charge = technic.power_tools[stackname] or 0
-			if not meta or not meta.charge then meta.charge = 0 end
-			-- debug minetest.chat_send_player(name, " >>> tool charge = "..meta.charge)
-			-- debug minetest.chat_send_player(name, " >>> max_tool charge = "..max_charge)
-			local need = max_charge	- meta.charge
-			if need >= fuelmeta.fuel then
-				meta.charge = meta.charge + fuelmeta.fuel
-				fuelmeta.fuel = fuelmeta.fuel - need	
-			else
-				meta.charge = meta.charge + need
-				fuelmeta.fuel = fuelmeta.fuel - need
-			end
-			-- debug minetest.chat_send_player(name, " >>> Stock = "..fuelmeta.fuel)
-			fuelstack:set_wear(65535-(fuelmeta.fuel/fuel_max_charge*65535))  -- update fuel wearout
-			technic.set_RE_wear(stack, meta.charge, max_charge)              -- update tool charge
-			stack:set_metadata(minetest.serialize(meta))
-			fuelstack:set_metadata(minetest.serialize(fuelmeta))
-			if fuelmeta.fuel <= 0 then fuelstack = {} end
-			player_inv:set_stack("fuel", 1, fuelstack)
-			inv:set_stack("fuel", 1, fuelstack)
+			pocket_charge_tool(inv, stack, stackname, player_inv)
 			nukestring = ocs.."OK"..ccs
 			pocket_update(name)
 		end
